@@ -1,6 +1,7 @@
 package com.monentreprise.gestionconges.Security;
 
 import com.monentreprise.gestionconges.entity.Role;
+import com.monentreprise.gestionconges.service.JwtAuthenticationFilter;
 import com.monentreprise.gestionconges.service.UserDetailServiceImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -33,15 +34,23 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
+
 import static org.springframework.security.config.Customizer.withDefaults;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
-
+    private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserDetailServiceImpl userDetailService;
 
-    public SecurityConfig(UserDetailServiceImpl userDetailService) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter, UserDetailServiceImpl userDetailService) {
+        this.jwtAuthFilter = jwtAuthFilter;
         this.userDetailService = userDetailService;
     }
 
@@ -66,12 +75,14 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                .cors(Customizer.withDefaults())  // ⚡ active CORS en utilisant ton @Bean corsConfigurationSource
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/users").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/users/*").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/users").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/users/*").authenticated()
+                        .requestMatchers(HttpMethod.PATCH, "/api/users/*").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/users/*").hasRole("ADMIN")
 
                         .requestMatchers(HttpMethod.GET, "/api/conges").hasAnyRole("ADMIN", "MANAGER")
@@ -87,16 +98,29 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/typeconges/").hasAnyRole("ADMIN", "MANAGER")
                         .requestMatchers(HttpMethod.PUT, "/api/typeconges/*").hasAnyRole("ADMIN", "MANAGER")
                         .requestMatchers(HttpMethod.DELETE, "/api/typeconges/*").hasRole("ADMIN")
-
+                        .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated()
-                )
-                .httpBasic(Customizer.withDefaults());
 
+
+                )
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
+    @Bean
+    CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of("http://localhost:4200"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT","PATCH", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
 }
+
 
 
 

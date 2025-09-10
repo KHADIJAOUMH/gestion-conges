@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@CrossOrigin(origins = "http://localhost:4200")
 @RestController
 @RequestMapping("/api")
 public class CongeController {
@@ -142,6 +143,23 @@ public class CongeController {
         Conge updated = congeRepository.save(conge);
         return ResponseEntity.ok(congeMapper.toResponseDTO(updated));
     }
+
+    @GetMapping("/conges/mine")
+    @PreAuthorize("hasRole('EMPLOYEE')")
+    public ResponseEntity<List<CongeResponseDTO>> getMyConges(
+            @AuthenticationPrincipal org.springframework.security.core.userdetails.User userDetails) {
+
+        AppUser user = appUserRepository.findByUsername(userDetails.getUsername())
+                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur non trouvé"));
+
+        List<Conge> conges = congeRepository.findByUserId(user.getId());
+        List<CongeResponseDTO> dtos = conges.stream()
+                .map(congeMapper::toResponseDTO)
+                .toList();
+
+        return ResponseEntity.ok(dtos);
+    }
+
 }
 
 

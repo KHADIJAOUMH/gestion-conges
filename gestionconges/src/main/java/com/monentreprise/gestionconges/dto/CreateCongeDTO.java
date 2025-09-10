@@ -17,7 +17,7 @@ public class CreateCongeDTO {
     @FutureOrPresent(message = "La date de fin doit être aujourd'hui ou dans le futur")
     private LocalDate dateFin;
 
-    @NotBlank(message = "Le motif est obligatoire")
+
     private String motif;
 
     @NotNull(message = "Le type de congé est obligatoire")

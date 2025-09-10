@@ -4,10 +4,8 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.monentreprise.gestionconges.entity.Role;
 import jakarta.validation.constraints.*;
 import lombok.Data;
-import org.springframework.cglib.core.Local;
 
 import java.time.LocalDate;
-import java.util.Date;
 import java.util.List;
 
 @Data
@@ -41,7 +39,7 @@ public class CreateUserDTO {
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate dateOfBirth;
 
-    @NotNull(message = "Le rôle est obligatoire")
+    @NotEmpty(message = "Le rôle est obligatoire")
     private List<Role> roles;
-
 }
+

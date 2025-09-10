@@ -10,13 +10,17 @@ import com.monentreprise.gestionconges.repository.AppUserRepository;
 import com.monentreprise.gestionconges.service.AppUserMapper;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
+@CrossOrigin(origins = "http://localhost:4200")
 @RestController
 @RequestMapping("/api")
 public class AppUserController {
@@ -55,7 +59,7 @@ public class AppUserController {
         return appuserMapper.toResponseDTO(saved);
     }
 
-    @PutMapping("/users/{id}")
+    @PatchMapping("/users/{id}")
     @PreAuthorize("hasRole('ADMIN') or @securityService.isOwner(#id, principal.username)")
     public UserResponseDTO updateUser(@PathVariable Long id, @Valid @RequestBody UpdateUserDTO dto) {
         AppUser existingUser = appUserRepository.findById(id)
@@ -68,11 +72,26 @@ public class AppUserController {
 
     @DeleteMapping("/users/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public String deleteUser(@PathVariable Long id) {
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteUser(@PathVariable Long id) {
         if (!appUserRepository.existsById(id)) {
             throw new ResourceNotFoundException("User not found with id " + id);
         }
         appUserRepository.deleteById(id);
-        return "User with ID " + id + " has been deleted";
     }
+    @GetMapping("/users/me")
+    @PreAuthorize("isAuthenticated()")
+    public UserResponseDTO getCurrentUser(Authentication authentication) {
+        String username = authentication.getName();
+        AppUser user = appUserRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with username " + username));
+        return appuserMapper.toResponseDTO(user);
+    }
+
+    //Dans AppUserController (ou un @ControllerAdvice global)
+    @InitBinder
+    public void initBinder(WebDataBinder binder) {binder.registerCustomEditor(String.class, new org.springframework.beans.propertyeditors.StringTrimmerEditor(true));
+    }
+
+
 }

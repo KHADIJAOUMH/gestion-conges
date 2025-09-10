@@ -34,16 +34,21 @@ public class AppUserMapper {
     }
 
     public void updateEntity(AppUser user, UpdateUserDTO dto) {
-        user.setUsername(dto.getUsername());
-        user.setEmail(dto.getEmail());
-        user.setFirstName(dto.getFirstName());
-        user.setLastName(dto.getLastName());
-        user.setCin(dto.getCin());
-        user.setPhone(dto.getPhone());
-        user.setAddress(dto.getAddress());
-        user.setDateOfBirth(dto.getDateOfBirth());
-        user.setRoles(dto.getRoles());
+        if (dto.getUsername() != null) user.setUsername(dto.getUsername());
+        if (dto.getEmail() != null) user.setEmail(dto.getEmail());
+        if (dto.getFirstName() != null) user.setFirstName(dto.getFirstName());
+        if (dto.getLastName() != null) user.setLastName(dto.getLastName());
+        if (dto.getCin() != null) user.setCin(dto.getCin());
+        if (dto.getPhone() != null) user.setPhone(dto.getPhone());
+        if (dto.getAddress() != null) user.setAddress(dto.getAddress());
+        if (dto.getDateOfBirth() != null) user.setDateOfBirth(dto.getDateOfBirth());
+        if (dto.getRoles() != null) user.setRoles(dto.getRoles());
+
+        if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
+            user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        }
     }
+
 
     public UserResponseDTO toResponseDTO(AppUser user) {
         return new UserResponseDTO(
@@ -55,7 +60,8 @@ public class AppUserMapper {
                 user.getCin(),
                 user.getPhone(),
                 user.getAddress(),
-                user.getDateOfBirth()
+                user.getDateOfBirth(),
+                user.getRoles()
         );
     }
 }
